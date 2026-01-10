@@ -37,11 +37,15 @@ class MainActivity : AppCompatActivity() {
 
         }
 
-        webView.loadUrl("https://duckduckgo.com/")
-        webView.settings.javaScriptEnabled = true;
+        }
+        webView.settings.javaScriptEnabled = true
 
-
-        urlBar = findViewById<EditText>(R.id.urlBar)
+        if (savedInstanceState != null) {
+            Log.d("TAG", "RESTORE")
+            webView.restoreState(savedInstanceState)
+        } else {
+            webView.loadUrl("https://duckduckgo.com/")
+        }
 
         urlBar.setOnEditorActionListener { v, actionId, _ ->
 
@@ -61,4 +65,16 @@ class MainActivity : AppCompatActivity() {
 
 
     }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        webView.saveState(outState)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        webView.restoreState(savedInstanceState)
+    }
+
+
 }
