@@ -38,6 +38,7 @@
                 android:hint="Tapez URL ou recherche"
                 android:imeOptions="actionGo"
                 android:inputType="text"
+                android:selectAllOnFocus="true"
                 android:singleLine="true">
 
             </EditText>
