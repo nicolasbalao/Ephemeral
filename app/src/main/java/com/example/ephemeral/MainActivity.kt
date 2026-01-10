@@ -1,11 +1,19 @@
 package com.example.ephemeral
 
+import android.annotation.SuppressLint
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
+import android.view.View
+import android.view.WindowInsets
 import android.view.inputmethod.EditorInfo
+import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.EditText
+import android.widget.FrameLayout
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -16,7 +24,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
     private lateinit var urlBar: EditText
 
-
+    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -29,6 +37,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         webView = findViewById<WebView>(R.id.webview)
+        urlBar = findViewById<EditText>(R.id.urlBar)
+
+
         webView.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
@@ -36,6 +47,49 @@ class MainActivity : AppCompatActivity() {
             }
 
         }
+        webView.webChromeClient = object : WebChromeClient() {
+            private var customView: View? = null
+            private var customViewCallback: CustomViewCallback? = null
+
+            @RequiresApi(Build.VERSION_CODES.R)
+            override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
+                if (customView != null) {
+                    callback?.onCustomViewHidden()
+                    return
+                }
+
+                customView = view
+                customViewCallback = callback
+
+                // Cache la WebView normale
+                webView.visibility = View.GONE
+
+                // Ajoute la vue fullscreen dans le decor view
+                val decor = window.decorView as FrameLayout
+                decor.addView(
+                    view, FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.MATCH_PARENT
+                    )
+                )
+
+                // Fullscreen immersive
+                window.insetsController?.hide(WindowInsets.Type.systemBars())
+            }
+
+            @RequiresApi(Build.VERSION_CODES.R)
+            override fun onHideCustomView() {
+                customView?.let {
+                    (window.decorView as FrameLayout).removeView(it)
+                    customView = null
+                }
+
+                window.insetsController?.show(WindowInsets.Type.systemBars())
+                webView.visibility = View.VISIBLE
+
+                customViewCallback?.onCustomViewHidden()
+                customViewCallback = null
+            }
 
         }
         webView.settings.javaScriptEnabled = true
