@@ -1,21 +1,15 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/main"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
-    <!-- WebView container -->
-    <FrameLayout
-        android:id="@+id/webview_container"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
-    <!-- Barre de recherche sticky top -->
+    <!-- Search bar : vrai bloc sticky top -->
     <LinearLayout
         android:id="@+id/search_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="top"
-        android:layout_margin="4dp"
+        android:layout_margin="6dp"
         android:background="@drawable/search_bar_bg"
         android:gravity="center_vertical"
         android:orientation="horizontal"
@@ -24,7 +18,6 @@
         <ImageView
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:contentDescription="Search engine icon"
             android:paddingEnd="8dp"
             android:src="@drawable/globe_24px" />
 
@@ -36,28 +29,41 @@
             android:background="@null"
             android:hint="Tapez URL ou recherche"
             android:imeOptions="actionGo"
-            android:inputType="text"
             android:selectAllOnFocus="true"
             android:singleLine="true" />
 
         <ImageView
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:contentDescription="Search Icon"
             android:paddingStart="8dp"
             android:src="@drawable/search_24px" />
     </LinearLayout>
 
-    <!-- Tab bar sticky bottom -->
-    <LinearLayout
-        android:id="@+id/tab_bar"
+    <!-- Zone contenu -->
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:layout_gravity="bottom"
-        android:layout_margin="4dp"
-        android:background="@drawable/tab_bar_bg"
-        android:gravity="center"
-        android:orientation="horizontal"
-        android:padding="8dp"
-        android:visibility="visible" />
-</FrameLayout>
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <!-- WebView -->
+        <FrameLayout
+            android:id="@+id/webview_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <!-- Tab bar overlay -->
+        <LinearLayout
+            android:id="@+id/tab_bar"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_gravity="bottom"
+            android:layout_margin="4dp"
+            android:background="@drawable/tab_bar_bg"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:padding="8dp"
+            android:visibility="visible" />
+
+    </FrameLayout>
+
+</LinearLayout>
