@@ -4,7 +4,9 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.view.View
+import android.webkit.CookieManager
 import android.webkit.WebChromeClient
+import android.webkit.WebStorage
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
@@ -113,6 +115,14 @@ class TabManager(
 
             switchTo(nextTab)
         }
+
+        // Privacy
+        tab.webView.clearHistory()
+        tab.webView.clearCache(true)
+        WebStorage.getInstance().deleteAllData()
+        CookieManager.getInstance().removeAllCookies(null)
+        CookieManager.getInstance().flush()
+
         tabs.remove(tab)
 
     }
