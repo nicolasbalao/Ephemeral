@@ -14,6 +14,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Toast
@@ -30,6 +31,10 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var tabManager: TabManager
     private lateinit var urlBar: EditText
+
+    companion object {
+        const val BASE_URL = "https://duckduckgo.com"
+    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     @SuppressLint("SetJavaScriptEnabled")
@@ -53,6 +58,10 @@ class MainActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 urlBar.setText(url)
+                val tab = tabManager.getCurrentTab() ?: return
+                if (tab.webView == view) {
+                    tab.url = url
+                }
             }
 
             override fun shouldOverrideUrlLoading(
@@ -133,6 +142,13 @@ class MainActivity : AppCompatActivity() {
             webChromeClient = webChromeClient
         )
 
+        val homeBtn = findViewById<ImageButton>(R.id.home_btn)
+
+        homeBtn.setOnClickListener {
+            val currentTab = tabManager.getCurrentTab()
+            currentTab?.webView?.loadUrl(BASE_URL)
+        }
+
         if (savedInstanceState == null) {
             tabManager.createTab("https://duckduckgo.com")
             // TODO: Refactor with observable or something like that
@@ -171,6 +187,13 @@ class MainActivity : AppCompatActivity() {
             } else false
         }
 
+        val newTabButton = findViewById<ImageButton>(R.id.new_tab_btn)
+
+
+        newTabButton.setOnClickListener {
+            tabManager.newTab()
+            refreshTabBar()
+        }
 
     }
 
@@ -216,7 +239,7 @@ class MainActivity : AppCompatActivity() {
 
         tabs.forEach { tab ->
             val tabFrame = FrameLayout(this).apply {
-                layoutParams = LinearLayout.LayoutParams(50, 50).apply {
+                layoutParams = LinearLayout.LayoutParams(90, 90).apply {
                     marginStart = 8
                     marginEnd = 8
                 }
@@ -246,6 +269,13 @@ class MainActivity : AppCompatActivity() {
                     tabManager.switchTo(tab)
                     refreshTabBar()
                     setupLongPressForCurrentWebView()
+                }
+
+                setOnLongClickListener {
+                    tabManager.closeTab(tab)
+                    refreshTabBar()
+                    setupLongPressForCurrentWebView()
+                    true
                 }
             }
             tabBar.addView(tabFrame)

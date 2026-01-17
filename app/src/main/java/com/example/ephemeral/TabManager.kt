@@ -21,6 +21,12 @@ class TabManager(
     private var currentTab: Tab? = null
     private var nextId = 0
 
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun newTab(): Tab {
+        return createTab("https://duckduckgo.com", switchTo = true)
+    }
+
     @RequiresApi(Build.VERSION_CODES.O)
     fun createTab(url: String, switchTo: Boolean = true): Tab {
         val webView: WebView = createWebView();
@@ -64,6 +70,50 @@ class TabManager(
             settings.domStorageEnabled = true
             visibility = View.GONE
         }
+
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun closeCurrentTab() {
+        val tab = currentTab ?: return
+
+        val index = tabs.indexOf(tab)
+
+        container.removeView(tab.webView)
+        tab.webView.destroy()
+        tabs.remove(tab)
+
+        val nextTab = when {
+            tabs.isEmpty() -> {
+                newTab()
+            }
+
+            index > 0 -> tabs[index - 1]
+            else -> tabs.first()
+        }
+
+        switchTo(nextTab)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun closeTab(tab: Tab) {
+        container.removeView(tab.webView)
+        tab.webView.destroy()
+
+        if (tab == currentTab) {
+            val index = tabs.indexOf(tab)
+            val nextTab = when {
+                tabs.isEmpty() -> {
+                    newTab()
+                }
+
+                index > 0 -> tabs[index - 1]
+                else -> tabs.first()
+            }
+
+            switchTo(nextTab)
+        }
+        tabs.remove(tab)
 
     }
 
