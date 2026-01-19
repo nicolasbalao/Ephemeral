@@ -11,6 +11,8 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 class TabManager(
     private val context: Context,
@@ -75,27 +77,6 @@ class TabManager(
 
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun closeCurrentTab() {
-        val tab = currentTab ?: return
-
-        val index = tabs.indexOf(tab)
-
-        container.removeView(tab.webView)
-        tab.webView.destroy()
-        tabs.remove(tab)
-
-        val nextTab = when {
-            tabs.isEmpty() -> {
-                newTab()
-            }
-
-            index > 0 -> tabs[index - 1]
-            else -> tabs.first()
-        }
-
-        switchTo(nextTab)
-    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun closeTab(tab: Tab) {
@@ -127,5 +108,60 @@ class TabManager(
 
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun closeAllTab() {
+        if (tabs.isEmpty()) {
+            return
+        }
+        val tabsCopy = tabs.toList()
+
+        tabsCopy.forEach { tab -> closeTab(tab) }
+        currentTab = null
+    }
+
+
+    @OptIn(ExperimentalUuidApi::class)
+    fun exportSession(session: Session? = null): Session {
+        val tabStates = tabs.map { tab ->
+            TabState(
+                id = tab.id,
+                url = tab.webView.url ?: "",
+                title = tab.webView.title,
+                scrollY = tab.webView.scrollY
+            )
+        }
+
+        if (session != null) {
+            session.tabs = tabStates
+            return session
+        }
+
+        return Session(
+            id = Uuid.random().toString(),
+            name = null,
+            createdAt = System.currentTimeMillis(),
+            tabs = tabStates,
+            activeTabId = currentTab?.id ?: -1
+        )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun restoreSession(session: Session) {
+        closeAllTab()
+        session.tabs.forEach { tabState ->
+            val tab = createTab(
+                tabState.url,
+                false
+            )
+
+            tab.webView.post {
+                tab.webView.scrollTo(0, tabState.scrollY)
+            }
+
+            if (tabState.id == session.activeTabId) {
+                switchTo(tab)
+            }
+        }
+    }
 
 }

@@ -1,6 +1,7 @@
 package com.example.ephemeral
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
@@ -20,6 +21,7 @@ import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
@@ -32,6 +34,24 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tabManager: TabManager
     private lateinit var urlBar: EditText
 
+    private val onAppClosed = {
+        saveCurrentSession()
+        SessionManager(this).currentSession = null
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private val sessionPicker =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val sessionId =
+                    result.data?.getStringExtra("session_id") ?: return@registerForActivityResult
+                val session =
+                    SessionManager(this).getSession(sessionId) ?: return@registerForActivityResult
+                SessionManager(this).currentSession = session
+                tabManager.restoreSession(session)
+            }
+        }
+
     companion object {
         const val BASE_URL = "https://duckduckgo.com"
     }
@@ -40,6 +60,7 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
 
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
@@ -195,6 +216,17 @@ class MainActivity : AppCompatActivity() {
             refreshTabBar()
         }
 
+        newTabButton.setOnLongClickListener {
+            sessionPicker.launch(Intent(this, SessionsActivity::class.java))
+            true
+        }
+
+        AppEvents.registerOnAppClosed(onAppClosed)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        AppEvents.unregister(onAppClosed)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -292,5 +324,11 @@ class MainActivity : AppCompatActivity() {
         super.onRestoreInstanceState(savedInstanceState)
 //        webView.restoreState(savedInstanceState)
     }
+
+    private fun saveCurrentSession() {
+        val session = tabManager.exportSession(SessionManager(this).currentSession)
+        SessionManager(this).saveSession(session)
+    }
+
 
 }
