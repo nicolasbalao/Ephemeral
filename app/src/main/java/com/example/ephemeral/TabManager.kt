@@ -11,8 +11,8 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
+import java.util.UUID
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 class TabManager(
     private val context: Context,
@@ -21,7 +21,7 @@ class TabManager(
     private val webChromeClient: WebChromeClient
 ) {
 
-    private val tabs = mutableListOf<Tab>()
+    private var tabs = mutableListOf<Tab>()
     private var currentTab: Tab? = null
     private var nextId = 0
 
@@ -81,7 +81,6 @@ class TabManager(
     @RequiresApi(Build.VERSION_CODES.O)
     fun closeTab(tab: Tab) {
         container.removeView(tab.webView)
-        tab.webView.destroy()
 
         if (tab == currentTab) {
             val index = tabs.indexOf(tab)
@@ -100,12 +99,11 @@ class TabManager(
         // Privacy
         tab.webView.clearHistory()
         tab.webView.clearCache(true)
+        tab.webView.destroy()
+
         WebStorage.getInstance().deleteAllData()
         CookieManager.getInstance().removeAllCookies(null)
         CookieManager.getInstance().flush()
-
-        tabs.remove(tab)
-
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -113,22 +111,22 @@ class TabManager(
         if (tabs.isEmpty()) {
             return
         }
-        val tabsCopy = tabs.toList()
 
-        tabsCopy.forEach { tab -> closeTab(tab) }
+        tabs.forEach { tab -> closeTab(tab) }
+        tabs.clear()
         currentTab = null
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun defaultTab() {
         closeAllTab()
-        val tab = createTab("", switchTo = true)
+        val tab = createTab("https://search.brave.com")
         currentTab = tab
     }
 
 
     @OptIn(ExperimentalUuidApi::class)
-    fun exportSession(session: Session? = null): Session {
+    fun exportSession(session: Session? = null, onAppClosed: Boolean = false): Session {
         val tabStates = tabs.map { tab ->
             TabState(
                 id = tab.id,
@@ -144,11 +142,11 @@ class TabManager(
         }
 
         return Session(
-            id = Uuid.random().toString(),
+            id = if (onAppClosed) "last_session" else UUID.randomUUID().toString(),
             name = null,
             createdAt = System.currentTimeMillis(),
             tabs = tabStates,
-            activeTabId = currentTab?.id ?: -1
+            activeTabId = currentTab?.id ?: -1,
         )
     }
 

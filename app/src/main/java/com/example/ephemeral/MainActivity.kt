@@ -314,7 +314,8 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun saveCurrentSession() {
-        val session = tabManager.exportSession(SessionManager(this).currentSession)
+        val session =
+            tabManager.exportSession(SessionManager(this).currentSession, onAppClosed = true)
         SessionManager(this).saveSession(session)
     }
 
