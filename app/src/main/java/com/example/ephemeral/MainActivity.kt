@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.view.WindowInsets
+import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -18,7 +19,6 @@ import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,9 +34,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tabManager: TabManager
     private lateinit var urlBar: EditText
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private val onAppClosed = {
         saveCurrentSession()
         SessionManager(this).currentSession = null
+        tabManager.defaultTab()
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -53,7 +55,7 @@ class MainActivity : AppCompatActivity() {
         }
 
     companion object {
-        const val BASE_URL = "https://duckduckgo.com"
+        const val BASE_URL = "https://search.brave.com"
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -89,12 +91,32 @@ class MainActivity : AppCompatActivity() {
                 view: WebView?,
                 request: WebResourceRequest?
             ): Boolean {
-                return false
+                val url = request?.url?.toString() ?: return false
+
+                // Don open new tab for the search result
+                if (url.contains(BASE_URL)) {
+                    return false
+                }
+
+                if (!request.isForMainFrame) return false
+
+                // 🚫 Redirect ou navigation automatique → même tab
+                if (!request.hasGesture()) {
+                    return false
+                }
+
+                // 🧼 Premier load du tab → même tab
+                if (view?.url == null) {
+                    return false
+                }
+
+                // ✅ Clic utilisateur → nouvel onglet
+                tabManager.createTab(url, switchTo = true)
+                return true
+
             }
 
-            override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
-                return false
-            }
+
         }
         val webChromeClient = object : WebChromeClient() {
             private var customView: View? = null
@@ -171,13 +193,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (savedInstanceState == null) {
-            tabManager.createTab("https://duckduckgo.com")
+            tabManager.createTab(BASE_URL)
             // TODO: Refactor with observable or something like that
             refreshTabBar()
 
         }
-
-        setupLongPressForCurrentWebView()
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
 
@@ -197,7 +217,7 @@ class MainActivity : AppCompatActivity() {
             if (actionId == EditorInfo.IME_ACTION_GO) {
                 val input = urlBar.text.toString()
                 tabManager.getCurrentTab()?.webView?.loadUrl(
-                    "https://duckduckgo.com/?q=${
+                    "${BASE_URL}/search?q=${
                         URLEncoder.encode(
                             input,
                             "UTF-8"
@@ -222,38 +242,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         AppEvents.registerOnAppClosed(onAppClosed)
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_SECURE,
+            WindowManager.LayoutParams.FLAG_SECURE
+        )
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onDestroy() {
         super.onDestroy()
         AppEvents.unregister(onAppClosed)
     }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun setupLongPressForCurrentWebView() {
-        val webView = tabManager.getCurrentTab()?.webView ?: return
-
-        webView.setOnLongClickListener { view ->
-            val hit = (view as WebView).hitTestResult
-            val type = hit.type
-            val extra = hit.extra
-
-            if (type == WebView.HitTestResult.SRC_ANCHOR_TYPE || type == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
-                val url = extra ?: return@setOnLongClickListener true
-
-                tabManager.createTab(url, switchTo = false)
-                // TODO: Refactor with observable or something like that
-                refreshTabBar()
-
-                Toast.makeText(this, "Onglet ouvert en arrière-plan", Toast.LENGTH_SHORT).show()
-                true
-            } else {
-                false
-            }
-        }
-
-    }
-
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun refreshTabBar() {
@@ -300,13 +299,11 @@ class MainActivity : AppCompatActivity() {
                 setOnClickListener {
                     tabManager.switchTo(tab)
                     refreshTabBar()
-                    setupLongPressForCurrentWebView()
                 }
 
                 setOnLongClickListener {
                     tabManager.closeTab(tab)
                     refreshTabBar()
-                    setupLongPressForCurrentWebView()
                     true
                 }
             }
@@ -315,15 +312,6 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-//        webView.saveState(outState)
-    }
-
-    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
-        super.onRestoreInstanceState(savedInstanceState)
-//        webView.restoreState(savedInstanceState)
-    }
 
     private fun saveCurrentSession() {
         val session = tabManager.exportSession(SessionManager(this).currentSession)

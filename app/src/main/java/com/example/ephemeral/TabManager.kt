@@ -28,7 +28,7 @@ class TabManager(
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun newTab(): Tab {
-        return createTab("https://duckduckgo.com", switchTo = true)
+        return createTab("https://search.brave.com", switchTo = true)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -117,6 +117,13 @@ class TabManager(
 
         tabsCopy.forEach { tab -> closeTab(tab) }
         currentTab = null
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun defaultTab() {
+        closeAllTab()
+        val tab = createTab("", switchTo = true)
+        currentTab = tab
     }
 
 
