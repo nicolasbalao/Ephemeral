@@ -32,12 +32,13 @@ import java.net.URLEncoder
 class MainActivity : AppCompatActivity() {
 
     private lateinit var tabManager: TabManager
+    private lateinit var sessionsManager: SessionManager
     private lateinit var urlBar: EditText
 
     @RequiresApi(Build.VERSION_CODES.O)
     private val onAppClosed = {
-        saveCurrentSession()
-        SessionManager(this).currentSession = null
+        saveCurrentSession(onAppClosed = true)
+        sessionsManager.currentSession = null
         tabManager.defaultTab()
     }
 
@@ -48,8 +49,8 @@ class MainActivity : AppCompatActivity() {
                 val sessionId =
                     result.data?.getStringExtra("session_id") ?: return@registerForActivityResult
                 val session =
-                    SessionManager(this).getSession(sessionId) ?: return@registerForActivityResult
-                SessionManager(this).currentSession = session
+                    sessionsManager.getSession(sessionId) ?: return@registerForActivityResult
+                sessionsManager.currentSession = session
                 tabManager.restoreSession(session)
             }
         }
@@ -63,6 +64,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        sessionsManager = SessionManager(this)
 
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
@@ -246,6 +248,12 @@ class MainActivity : AppCompatActivity() {
             WindowManager.LayoutParams.FLAG_SECURE,
             WindowManager.LayoutParams.FLAG_SECURE
         )
+
+        val saveSessionBtn = findViewById<ImageButton>(R.id.save_session)
+        saveSessionBtn.setOnClickListener {
+            saveCurrentSession()
+
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -313,10 +321,10 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private fun saveCurrentSession() {
+    private fun saveCurrentSession(onAppClosed: Boolean = false) {
         val session =
-            tabManager.exportSession(SessionManager(this).currentSession, onAppClosed = true)
-        SessionManager(this).saveSession(session)
+            tabManager.exportSession(sessionsManager.currentSession, onAppClosed)
+        sessionsManager.saveSession(session)
     }
 
 

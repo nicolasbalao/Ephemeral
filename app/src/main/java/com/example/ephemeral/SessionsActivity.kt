@@ -2,6 +2,7 @@ package com.example.ephemeral
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.WindowManager
 import android.widget.Button
 import android.widget.LinearLayout
 import androidx.activity.enableEdgeToEdge
@@ -30,6 +31,10 @@ class SessionsActivity : AppCompatActivity() {
             drawSessionList()
         }
         drawSessionList()
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_SECURE,
+            WindowManager.LayoutParams.FLAG_SECURE
+        )
     }
 
 

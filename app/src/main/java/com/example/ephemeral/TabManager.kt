@@ -104,6 +104,9 @@ class TabManager(
         WebStorage.getInstance().deleteAllData()
         CookieManager.getInstance().removeAllCookies(null)
         CookieManager.getInstance().flush()
+
+        tabs.remove(tab)
+
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -111,8 +114,9 @@ class TabManager(
         if (tabs.isEmpty()) {
             return
         }
+        val tabsCopy = tabs.toList()
 
-        tabs.forEach { tab -> closeTab(tab) }
+        tabsCopy.forEach { tab -> closeTab(tab) }
         tabs.clear()
         currentTab = null
     }

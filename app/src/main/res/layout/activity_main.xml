@@ -67,6 +67,15 @@
             android:contentDescription="New Tab"
             android:src="@drawable/add_24px" />
 
+        <ImageButton
+            android:id="@+id/save_session"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Save session"
+            android:src="@drawable/bookmark_24px" />
+
     </LinearLayout>
 
 
